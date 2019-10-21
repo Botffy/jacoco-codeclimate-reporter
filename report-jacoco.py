@@ -36,30 +36,33 @@ def create_sources_payload(reports, project_root_dir):
     sources = []
 
     for file, lines in reports.items():
-        contents = open(file, "r", encoding="utf-8-sig").read()
-        lines_total = len(contents.splitlines(True));
-        header = "blob " + str(len(contents)) + "\0"
-        blob_id = sha1((header + contents).encode("utf-8")).hexdigest()
+        try:
+            contents = open(file, "r", encoding="utf-8-sig").read()
+            lines_total = len(contents.splitlines(True));
+            header = "blob " + str(len(contents)) + "\0"
+            blob_id = sha1((header + contents).encode("utf-8")).hexdigest()
 
-        covered = sum(lines.values());
-        total = len(lines);
+            covered = sum(lines.values());
+            total = len(lines);
 
-        coverage = [None]*lines_total;
-        for lineno, result in lines.items():
-            coverage[lineno-1] = result
+            coverage = [None]*lines_total;
+            for lineno, result in lines.items():
+                coverage[lineno-1] = result
 
-        sources.append({
-            "name": os.path.relpath(file, project_root_dir),
-            "blob_id": blob_id,
-            "line_counts": {
-                "total": total,
-                "covered": covered,
-                "missed": total - covered
-            },
-            "covered_strength": 1,
-            "covered_percent": 0 if not total else covered / total,
-            "coverage": json.dumps(coverage)
-        })
+            sources.append({
+                "name": os.path.relpath(file, project_root_dir),
+                "blob_id": blob_id,
+                "line_counts": {
+                    "total": total,
+                    "covered": covered,
+                    "missed": total - covered
+                },
+                "covered_strength": 1,
+                "covered_percent": 0 if not total else covered / total,
+                "coverage": json.dumps(coverage)
+            })
+        except FileNotFoundError:
+            print("Could not open " + file)
     return sources
 
 def make_globals(sources, root, project_root_dir):
